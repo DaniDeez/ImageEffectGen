@@ -2,6 +2,14 @@
 
 Transform images into beautiful jigsaw folk art patterns! ImageEffectGen applies stylized filters that turn photos into interlocking puzzle-piece folk art with flat colors and organic shapes.
 
+## 🌐 Try It Online (No Installation!)
+
+**[→ Launch Web Demo](https://imageeffectgen.streamlit.app)** ← Click here to try it in your browser!
+
+Upload an image and transform it into folk art instantly - no installation or coding required!
+
+---
+
 ## 🚀 Quick Start (2 minutes!)
 
 ```bash
@@ -19,12 +27,14 @@ python run_filter.py your_image.jpg
 
 ## Features
 
+- **🌐 Web Demo**: Try it instantly in your browser - no installation needed!
 - **Jigsaw Folk Art Filter**: Transform any image into a folk art style with organic, interlocking puzzle piece shapes
 - **Color Quantization**: Reduce images to vibrant folk art color palettes
 - **Customizable Parameters**: Adjust piece size, color count, smoothness, and more
 - **Decorative Borders**: Add traditional folk art borders with flower or geometric patterns
 - **CLI Interface**: Easy-to-use command-line tool
 - **Python API**: Integrate into your own projects
+- **Streamlit App**: Beautiful web interface with real-time previews
 
 ## Installation
 
@@ -148,6 +158,38 @@ Options:
   --output-dir PATH  Output directory for comparison images
   --help             Show help message
 ```
+
+## 🌐 Web Interface
+
+### Run Locally
+
+Start the Streamlit web interface on your machine:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Then open your browser to `http://localhost:8501`
+
+Features:
+- 📤 Drag-and-drop image upload
+- ⚙️ Interactive parameter controls
+- 🎨 Real-time preview
+- 📥 One-click download
+- 🎯 Quick presets (Small, Large, Smooth, etc.)
+- 🖼️ Before/after comparison
+
+### Deploy Your Own
+
+Deploy for free on Streamlit Cloud:
+
+1. Fork this repository
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect your GitHub account
+4. Deploy `streamlit_app.py`
+5. Get a shareable URL like `https://your-app.streamlit.app`
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
 ## How It Works
 

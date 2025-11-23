@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""
+Streamlit Web Interface for Jigsaw Folk Art Filter
+Live demo: https://imageeffectgen.streamlit.app
+"""
+
+import streamlit as st
+import sys
+from pathlib import Path
+from PIL import Image
+import io
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent / 'src'))
+
+from imageeffectgen import JigsawFolkFilter
+
+
+# Page configuration
+st.set_page_config(
+    page_title="Jigsaw Folk Art Filter",
+    page_icon="🎨",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 3rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 0;
+    }
+    .sub-header {
+        text-align: center;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+    .stButton>button {
+        width: 100%;
+        background-color: #FF4B4B;
+        color: white;
+        font-weight: bold;
+    }
+    .example-image {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+def create_sample_image():
+    """Create a colorful sample image for demonstration."""
+    from PIL import ImageDraw
+
+    img = Image.new('RGB', (400, 400), color=(135, 206, 235))
+    draw = ImageDraw.Draw(img)
+
+    # Ground
+    draw.rectangle([0, 270, 400, 400], fill=(34, 139, 34))
+
+    # Sun
+    draw.ellipse([300, 30, 370, 100], fill=(255, 215, 0))
+
+    # House
+    draw.rectangle([100, 165, 230, 270], fill=(220, 47, 2))
+    draw.polygon([(100, 165), (165, 100), (230, 165)], fill=(139, 69, 19))
+
+    # Door
+    draw.rectangle([145, 210, 185, 270], fill=(101, 67, 33))
+
+    # Windows
+    draw.rectangle([115, 180, 145, 210], fill=(255, 255, 255))
+    draw.rectangle([185, 180, 215, 210], fill=(255, 255, 255))
+
+    # Tree
+    draw.ellipse([260, 135, 340, 215], fill=(34, 139, 34))
+    draw.rectangle([290, 215, 310, 270], fill=(101, 67, 33))
+
+    # Flowers
+    for x in [50, 90, 320, 360]:
+        y = 285
+        draw.ellipse([x-7, y-7, x+7, y+7], fill=(255, 105, 180))
+        draw.ellipse([x-2, y-2, x+2, y+2], fill=(255, 215, 0))
+
+    return img
+
+
+def main():
+    """Main Streamlit app."""
+
+    # Header
+    st.markdown('<p class="main-header">🎨 Jigsaw Folk Art Filter</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Transform images into beautiful puzzle-piece folk art!</p>', unsafe_allow_html=True)
+
+    # Sidebar - Parameters
+    with st.sidebar:
+        st.header("⚙️ Filter Settings")
+
+        # Presets
+        st.subheader("Quick Presets")
+        preset = st.radio(
+            "Choose a preset:",
+            ["Custom", "Default", "Small Pieces", "Large Pieces", "Smooth", "With Border"],
+            help="Select a preset or choose 'Custom' to adjust parameters manually"
+        )
+
+        st.divider()
+
+        # Parameters
+        st.subheader("Custom Parameters")
+
+        if preset == "Custom":
+            piece_size = st.slider("Piece Size", 20, 100, 50, 5,
+                                  help="Size of jigsaw pieces (larger = fewer pieces)")
+            n_colors = st.slider("Number of Colors", 8, 24, 16, 1,
+                               help="More colors = more detail, fewer = more stylized")
+            smoothness = st.slider("Smoothness", 1, 10, 3, 1,
+                                 help="How smooth the piece edges are")
+            use_folk_palette = st.checkbox("Use Folk Art Palette", True,
+                                         help="Use traditional folk art colors")
+            add_borders = st.checkbox("Add Decorative Border", False)
+
+            if add_borders:
+                border_pattern = st.selectbox("Border Pattern",
+                                             ["flowers", "geometric"])
+            else:
+                border_pattern = None
+        else:
+            # Apply presets
+            presets = {
+                "Default": {"piece_size": 50, "n_colors": 16, "smoothness": 3,
+                           "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                "Small Pieces": {"piece_size": 30, "n_colors": 20, "smoothness": 3,
+                                "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                "Large Pieces": {"piece_size": 70, "n_colors": 10, "smoothness": 2,
+                                "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                "Smooth": {"piece_size": 55, "n_colors": 16, "smoothness": 8,
+                          "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                "With Border": {"piece_size": 45, "n_colors": 16, "smoothness": 3,
+                               "use_folk_palette": True, "add_borders": True, "border_pattern": "flowers"}
+            }
+
+            params = presets[preset]
+            piece_size = params["piece_size"]
+            n_colors = params["n_colors"]
+            smoothness = params["smoothness"]
+            use_folk_palette = params["use_folk_palette"]
+            add_borders = params["add_borders"]
+            border_pattern = params["border_pattern"]
+
+            # Display preset values
+            st.info(f"""
+            **{preset} Settings:**
+            - Piece Size: {piece_size}
+            - Colors: {n_colors}
+            - Smoothness: {smoothness}
+            - Folk Palette: {'Yes' if use_folk_palette else 'No'}
+            - Border: {border_pattern if add_borders else 'No'}
+            """)
+
+        st.divider()
+
+        # Info
+        st.subheader("ℹ️ About")
+        st.markdown("""
+        This filter transforms images into jigsaw folk art style with:
+        - Organic puzzle piece shapes
+        - Flat folk art colors
+        - Traditional decorative borders
+
+        **Tips:**
+        - Small pieces = more detail
+        - Fewer colors = more folk art style
+        - Try different presets!
+        """)
+
+        st.divider()
+
+        # Links
+        st.markdown("""
+        **🔗 Links:**
+        - [GitHub Repo](https://github.com/DaniDeez/ImageEffectGen)
+        - [Documentation](https://github.com/DaniDeez/ImageEffectGen#readme)
+        """)
+
+    # Main content
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.header("📤 Upload Image")
+
+        # Image upload
+        uploaded_file = st.file_uploader(
+            "Choose an image...",
+            type=["jpg", "jpeg", "png", "bmp"],
+            help="Upload a JPG, PNG, or BMP image"
+        )
+
+        # Sample image button
+        use_sample = st.button("🎨 Use Sample Image", help="Try with a demo image")
+
+        if use_sample:
+            input_image = create_sample_image()
+            st.image(input_image, caption="Sample Image", use_container_width=True)
+        elif uploaded_file is not None:
+            input_image = Image.open(uploaded_file)
+            st.image(input_image, caption="Original Image", use_container_width=True)
+
+            # Show image info
+            st.caption(f"Size: {input_image.size[0]}×{input_image.size[1]} pixels")
+        else:
+            input_image = None
+            st.info("👆 Upload an image or use the sample image to get started!")
+
+    with col2:
+        st.header("🎨 Filtered Result")
+
+        if input_image is not None:
+            # Apply filter button
+            if st.button("✨ Apply Filter", type="primary"):
+                with st.spinner("🎨 Applying jigsaw folk filter... This may take a moment..."):
+                    try:
+                        # Create filter
+                        filter_obj = JigsawFolkFilter(
+                            piece_size=piece_size,
+                            n_colors=n_colors,
+                            use_folk_palette=use_folk_palette,
+                            smoothness=smoothness,
+                            add_borders=add_borders,
+                            border_pattern=border_pattern
+                        )
+
+                        # Apply filter
+                        result_image = filter_obj.apply(input_image)
+
+                        # Store in session state
+                        st.session_state.result_image = result_image
+                        st.session_state.filter_applied = True
+
+                        st.success("✅ Filter applied successfully!")
+
+                    except Exception as e:
+                        st.error(f"❌ Error applying filter: {str(e)}")
+                        st.session_state.filter_applied = False
+
+            # Display result if available
+            if hasattr(st.session_state, 'filter_applied') and st.session_state.filter_applied:
+                result_image = st.session_state.result_image
+                st.image(result_image, caption="Filtered Image", use_container_width=True)
+
+                # Show result info
+                st.caption(f"Size: {result_image.size[0]}×{result_image.size[1]} pixels")
+
+                # Download button
+                buf = io.BytesIO()
+                result_image.save(buf, format="PNG")
+                byte_im = buf.getvalue()
+
+                st.download_button(
+                    label="📥 Download Result",
+                    data=byte_im,
+                    file_name="jigsaw_folk_art.png",
+                    mime="image/png",
+                    help="Download the filtered image"
+                )
+        else:
+            st.info("Upload an image to see the filtered result here!")
+
+    # Examples section
+    st.divider()
+    st.header("🖼️ Examples")
+    st.markdown("Here are some examples of what the filter can do:")
+
+    example_cols = st.columns(3)
+
+    with example_cols[0]:
+        st.markdown("**Default Settings**")
+        st.markdown("Medium pieces, balanced colors")
+
+    with example_cols[1]:
+        st.markdown("**Small Pieces**")
+        st.markdown("More detail, intricate pattern")
+
+    with example_cols[2]:
+        st.markdown("**With Border**")
+        st.markdown("Decorative folk art border")
+
+    # Footer
+    st.divider()
+    st.markdown("""
+    <div style='text-align: center; color: #666; padding: 2rem;'>
+        <p>Made with ❤️ using Python, OpenCV, and Streamlit</p>
+        <p>Transform your images into beautiful folk art! 🎨</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()

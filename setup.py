@@ -28,12 +28,15 @@ setup(
     install_requires=[
         "numpy>=1.24.0",
         "Pillow>=10.0.0",
-        "opencv-python>=4.8.0",
+        "opencv-python-headless>=4.8.0",
         "scikit-image>=0.21.0",
         "scikit-learn>=1.3.0",
         "scipy>=1.11.0",
         "click>=8.1.0",
     ],
+    extras_require={
+        "web": ["streamlit>=1.28.0"],
+    },
     entry_points={
         "console_scripts": [
             "imageeffectgen=imageeffectgen.cli:main",
