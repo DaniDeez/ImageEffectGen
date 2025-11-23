@@ -14,93 +14,175 @@ def create_jigsaw_piece(
     tabs: Tuple[bool, bool, bool, bool] = (False, False, False, False)
 ) -> np.ndarray:
     """
-    Create a cross-shaped jigsaw puzzle piece with soft, bulbous lobes.
+    Create an interlocking jigsaw puzzle piece with tabs and blanks.
 
-    Creates organic, cloud-like puzzle pieces that tessellate in a grid.
-    Each piece has 4 rounded lobes extending outward (top, right, bottom, left).
+    Each piece has rounded protrusions (tabs) and indentations (blanks) that
+    interlock with adjacent pieces, mimicking real puzzle pieces.
 
     Args:
         x, y: Top-left corner position
         width, height: Piece dimensions
-        tab_size: Size of lobes as fraction of piece size (default: 0.3)
-        tabs: Not used, kept for compatibility
+        tab_size: Size of tab/blank as fraction of piece size (default: 0.3)
+        tabs: Tuple of (top, right, bottom, left) booleans
+              True = tab (protrusion out), False = blank (indentation in)
+              None values result in flat edge (for border pieces)
 
     Returns:
         Array of polygon points defining the piece shape
     """
     points = []
 
-    # Center of the piece
-    cx = x + width / 2
-    cy = y + height / 2
+    # Tab/blank dimensions
+    tab_depth = min(width, height) * tab_size
+    tab_width = min(width, height) * 0.4  # Width of the tab/blank along the edge
 
-    # Lobe radius - soft and puffy
-    lobe_w = width * tab_size
-    lobe_h = height * tab_size
+    # Number of points for smooth curves
+    num_curve_points = 12
 
-    # Inner cross dimensions (the center part)
-    inner_w = width * 0.3
-    inner_h = height * 0.3
+    # Corner radius for rounded corners
+    corner_radius = min(width, height) * 0.08
 
-    # Number of points per lobe for smoothness
-    num_points = 8
-
-    # Helper to create a bulbous lobe (like a puffy cloud)
-    def create_lobe(center_x, center_y, radius_x, radius_y, angle_offset, num_pts=8):
-        """Create a soft, rounded lobe."""
-        pts = []
-        angles = np.linspace(0, np.pi, num_pts)
+    def add_rounded_corner(px, py, radius, start_angle, end_angle):
+        """Add a rounded corner."""
+        angles = np.linspace(start_angle, end_angle, 5)
         for angle in angles:
-            # Create elliptical bulge
-            px = center_x + radius_x * np.cos(angle + angle_offset)
-            py = center_y + radius_y * np.sin(angle + angle_offset)
-            pts.append([px, py])
-        return pts
+            points.append([
+                px + radius * np.cos(angle),
+                py + radius * np.sin(angle)
+            ])
 
-    # Build the cross shape by going around clockwise
-    # Starting from top-left, going clockwise
+    def add_tab_or_blank(edge_start, edge_end, is_tab, perpendicular_out):
+        """Add a tab (protrusion) or blank (indentation) to an edge."""
+        # Edge direction
+        edge_vec = np.array(edge_end) - np.array(edge_start)
+        edge_length = np.linalg.norm(edge_vec)
+        edge_dir = edge_vec / edge_length if edge_length > 0 else np.array([1, 0])
 
-    # Top-left corner to top lobe
-    points.append([cx - inner_w, cy - inner_h])
+        # Perpendicular direction (pointing out from piece)
+        perp_dir = np.array(perpendicular_out)
 
-    # TOP LOBE (bulges upward)
-    points.append([cx - inner_w, cy - inner_h])
-    # Create puffy top lobe
-    top_lobe = create_lobe(cx, cy - inner_h - lobe_h * 0.7, lobe_w, lobe_h, -np.pi/2, num_points)
-    points.extend(top_lobe)
-    points.append([cx + inner_w, cy - inner_h])
+        # Start of edge
+        start_pt = np.array(edge_start)
+
+        # Position along edge where tab/blank starts and ends
+        tab_start_t = 0.5 - (tab_width / edge_length) / 2
+        tab_end_t = 0.5 + (tab_width / edge_length) / 2
+
+        # Points before tab/blank
+        t_before = np.linspace(0, tab_start_t, 3)
+        for t in t_before[:-1]:  # Exclude last to avoid duplicate
+            pt = start_pt + t * edge_vec
+            points.append(pt)
+
+        # Tab/blank center position
+        center_t = 0.5
+        center_pt = start_pt + center_t * edge_vec
+
+        # Create tab (outward) or blank (inward)
+        depth = tab_depth if is_tab else -tab_depth
+
+        # Base points where tab/blank meets the edge
+        tab_start_pt = start_pt + tab_start_t * edge_vec
+        tab_end_pt = start_pt + tab_end_t * edge_vec
+
+        # Control point for the curve (tip of tab or deepest point of blank)
+        control_pt = center_pt + depth * perp_dir
+
+        # Create smooth curve using circular arc approximation
+        # Left side of tab/blank
+        angles_left = np.linspace(0, np.pi / 2, num_curve_points // 2)
+        for i, angle in enumerate(angles_left):
+            # Bezier-like curve from tab_start to control point
+            t = i / (len(angles_left) - 1)
+            # Smooth interpolation
+            curve_pt = (1 - t)**2 * tab_start_pt + 2 * (1 - t) * t * (tab_start_pt + control_pt) / 2 + t**2 * control_pt
+            points.append(curve_pt)
+
+        # Right side of tab/blank (mirror)
+        angles_right = np.linspace(np.pi / 2, np.pi, num_curve_points // 2)
+        for i, angle in enumerate(angles_right):
+            t = i / (len(angles_right) - 1)
+            curve_pt = (1 - t)**2 * control_pt + 2 * (1 - t) * t * (tab_end_pt + control_pt) / 2 + t**2 * tab_end_pt
+            points.append(curve_pt)
+
+        # Points after tab/blank
+        t_after = np.linspace(tab_end_t, 1.0, 3)
+        for t in t_after[1:]:  # Skip first to avoid duplicate
+            pt = start_pt + t * edge_vec
+            points.append(pt)
+
+    # Define the four corners with rounded edges
+    top_left = (x + corner_radius, y + corner_radius)
+    top_right = (x + width - corner_radius, y + corner_radius)
+    bottom_right = (x + width - corner_radius, y + height - corner_radius)
+    bottom_left = (x + corner_radius, y + height - corner_radius)
+
+    # TOP EDGE (with optional tab/blank)
+    has_top = tabs[0] if tabs[0] is not None else None
+    if has_top is None:
+        # Flat edge
+        points.append([x + corner_radius, y])
+        points.append([x + width - corner_radius, y])
+    else:
+        add_tab_or_blank(
+            [x + corner_radius, y],
+            [x + width - corner_radius, y],
+            is_tab=has_top,
+            perpendicular_out=[0, -1]  # Up
+        )
 
     # Top-right corner
-    points.append([cx + inner_w, cy - inner_h])
+    add_rounded_corner(x + width - corner_radius, y + corner_radius, corner_radius, -np.pi/2, 0)
 
-    # RIGHT LOBE (bulges rightward)
-    points.append([cx + inner_w, cy - inner_h])
-    # Create puffy right lobe
-    right_lobe = create_lobe(cx + inner_w + lobe_w * 0.7, cy, lobe_w, lobe_h, 0, num_points)
-    points.extend(right_lobe)
-    points.append([cx + inner_w, cy + inner_h])
+    # RIGHT EDGE (with optional tab/blank)
+    has_right = tabs[1] if tabs[1] is not None else None
+    if has_right is None:
+        points.append([x + width, y + corner_radius])
+        points.append([x + width, y + height - corner_radius])
+    else:
+        add_tab_or_blank(
+            [x + width, y + corner_radius],
+            [x + width, y + height - corner_radius],
+            is_tab=has_right,
+            perpendicular_out=[1, 0]  # Right
+        )
 
     # Bottom-right corner
-    points.append([cx + inner_w, cy + inner_h])
+    add_rounded_corner(x + width - corner_radius, y + height - corner_radius, corner_radius, 0, np.pi/2)
 
-    # BOTTOM LOBE (bulges downward)
-    points.append([cx + inner_w, cy + inner_h])
-    # Create puffy bottom lobe
-    bottom_lobe = create_lobe(cx, cy + inner_h + lobe_h * 0.7, lobe_w, lobe_h, np.pi/2, num_points)
-    points.extend(bottom_lobe)
-    points.append([cx - inner_w, cy + inner_h])
+    # BOTTOM EDGE (with optional tab/blank)
+    has_bottom = tabs[2] if tabs[2] is not None else None
+    if has_bottom is None:
+        points.append([x + width - corner_radius, y + height])
+        points.append([x + corner_radius, y + height])
+    else:
+        add_tab_or_blank(
+            [x + width - corner_radius, y + height],
+            [x + corner_radius, y + height],
+            is_tab=has_bottom,
+            perpendicular_out=[0, 1]  # Down
+        )
 
     # Bottom-left corner
-    points.append([cx - inner_w, cy + inner_h])
+    add_rounded_corner(x + corner_radius, y + height - corner_radius, corner_radius, np.pi/2, np.pi)
 
-    # LEFT LOBE (bulges leftward)
-    points.append([cx - inner_w, cy + inner_h])
-    # Create puffy left lobe
-    left_lobe = create_lobe(cx - inner_w - lobe_w * 0.7, cy, lobe_w, lobe_h, np.pi, num_points)
-    points.extend(left_lobe)
-    points.append([cx - inner_w, cy - inner_h])
+    # LEFT EDGE (with optional tab/blank)
+    has_left = tabs[3] if tabs[3] is not None else None
+    if has_left is None:
+        points.append([x, y + height - corner_radius])
+        points.append([x, y + corner_radius])
+    else:
+        add_tab_or_blank(
+            [x, y + height - corner_radius],
+            [x, y + corner_radius],
+            is_tab=has_left,
+            perpendicular_out=[-1, 0]  # Left
+        )
 
-    return np.array(points, dtype=np.int32)
+    # Top-left corner
+    add_rounded_corner(x + corner_radius, y + corner_radius, corner_radius, np.pi, 3*np.pi/2)
+
+    return np.array(points, dtype=np.float32).astype(np.int32)
 
 
 def create_jigsaw_grid(
@@ -171,7 +253,7 @@ def create_jigsaw_grid(
             if col == 0:
                 tabs[3] = False  # No left tab on left edge
 
-            piece = create_jigsaw_piece(x, y, w, h, tab_size=0.15, tabs=tuple(tabs))
+            piece = create_jigsaw_piece(x, y, w, h, tab_size=0.25, tabs=tuple(tabs))
             bbox = (x, y, w, h)
             pieces.append((piece, bbox))
 
