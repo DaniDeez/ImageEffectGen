@@ -2,6 +2,21 @@
 
 Transform images into beautiful jigsaw folk art patterns! ImageEffectGen applies stylized filters that turn photos into interlocking puzzle-piece folk art with flat colors and organic shapes.
 
+## 🚀 Quick Start (2 minutes!)
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Run the demo (see it in action!)
+python demo.py
+
+# 3. Use with your own image
+python run_filter.py your_image.jpg
+```
+
+**That's it!** Check `demo_output/` folder for results. See [QUICKSTART.md](QUICKSTART.md) for detailed guide.
+
 ## Features
 
 - **Jigsaw Folk Art Filter**: Transform any image into a folk art style with organic, interlocking puzzle piece shapes
