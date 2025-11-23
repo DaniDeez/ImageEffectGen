@@ -10,120 +10,95 @@ def create_jigsaw_piece(
     y: int,
     width: int,
     height: int,
-    tab_size: float = 0.2,
+    tab_size: float = 0.3,
     tabs: Tuple[bool, bool, bool, bool] = (False, False, False, False)
 ) -> np.ndarray:
     """
-    Create a single jigsaw puzzle piece with interlocking tabs and blanks.
+    Create a cross-shaped jigsaw puzzle piece with soft, bulbous lobes.
+
+    Creates organic, cloud-like puzzle pieces that tessellate in a grid.
+    Each piece has 4 rounded lobes extending outward (top, right, bottom, left).
 
     Args:
         x, y: Top-left corner position
         width, height: Piece dimensions
-        tab_size: Size of tabs/blanks as fraction of piece size (default: 0.2)
-        tabs: (top, right, bottom, left) - True for tab (out), False for blank (in)
+        tab_size: Size of lobes as fraction of piece size (default: 0.3)
+        tabs: Not used, kept for compatibility
 
     Returns:
         Array of polygon points defining the piece shape
     """
     points = []
-    tab_top, tab_right, tab_bottom, tab_left = tabs
 
-    # Tab parameters - make them more circular/rounded
-    tab_radius_w = width * tab_size
-    tab_radius_h = height * tab_size
+    # Center of the piece
+    cx = x + width / 2
+    cy = y + height / 2
 
-    # Helper function to create a rounded tab or blank
-    def create_semicircle(cx, cy, radius, angle_start, angle_end, num_points=10):
-        """Create points for a semicircular tab or blank."""
-        angles = np.linspace(angle_start, angle_end, num_points)
+    # Lobe radius - soft and puffy
+    lobe_w = width * tab_size
+    lobe_h = height * tab_size
+
+    # Inner cross dimensions (the center part)
+    inner_w = width * 0.3
+    inner_h = height * 0.3
+
+    # Number of points per lobe for smoothness
+    num_points = 8
+
+    # Helper to create a bulbous lobe (like a puffy cloud)
+    def create_lobe(center_x, center_y, radius_x, radius_y, angle_offset, num_pts=8):
+        """Create a soft, rounded lobe."""
         pts = []
+        angles = np.linspace(0, np.pi, num_pts)
         for angle in angles:
-            px = cx + radius * np.cos(angle)
-            py = cy + radius * np.sin(angle)
+            # Create elliptical bulge
+            px = center_x + radius_x * np.cos(angle + angle_offset)
+            py = center_y + radius_y * np.sin(angle + angle_offset)
             pts.append([px, py])
         return pts
 
-    # TOP EDGE
-    points.append([x, y])
+    # Build the cross shape by going around clockwise
+    # Starting from top-left, going clockwise
 
-    if tab_top:
-        # Tab sticks UP (semicircle above the edge)
-        points.append([x + width * 0.35, y])
-        # Semicircle going up
-        tab_center_x = x + width * 0.5
-        tab_center_y = y - tab_radius_h * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, np.pi, 2*np.pi, 12)
-        points.extend(circle_pts)
-        points.append([x + width * 0.65, y])
-    else:
-        # Blank cuts DOWN (semicircle below the edge)
-        points.append([x + width * 0.35, y])
-        # Semicircle going down
-        tab_center_x = x + width * 0.5
-        tab_center_y = y + tab_radius_h * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, 0, np.pi, 12)
-        points.extend(circle_pts)
-        points.append([x + width * 0.65, y])
+    # Top-left corner to top lobe
+    points.append([cx - inner_w, cy - inner_h])
 
-    points.append([x + width, y])
+    # TOP LOBE (bulges upward)
+    points.append([cx - inner_w, cy - inner_h])
+    # Create puffy top lobe
+    top_lobe = create_lobe(cx, cy - inner_h - lobe_h * 0.7, lobe_w, lobe_h, -np.pi/2, num_points)
+    points.extend(top_lobe)
+    points.append([cx + inner_w, cy - inner_h])
 
-    # RIGHT EDGE
-    if tab_right:
-        # Tab sticks RIGHT
-        points.append([x + width, y + height * 0.35])
-        tab_center_x = x + width + tab_radius_w * 0.5
-        tab_center_y = y + height * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, np.pi * 0.5, np.pi * 1.5, 12)
-        points.extend(circle_pts)
-        points.append([x + width, y + height * 0.65])
-    else:
-        # Blank cuts LEFT
-        points.append([x + width, y + height * 0.35])
-        tab_center_x = x + width - tab_radius_w * 0.5
-        tab_center_y = y + height * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, -np.pi * 0.5, np.pi * 0.5, 12)
-        points.extend(circle_pts)
-        points.append([x + width, y + height * 0.65])
+    # Top-right corner
+    points.append([cx + inner_w, cy - inner_h])
 
-    points.append([x + width, y + height])
+    # RIGHT LOBE (bulges rightward)
+    points.append([cx + inner_w, cy - inner_h])
+    # Create puffy right lobe
+    right_lobe = create_lobe(cx + inner_w + lobe_w * 0.7, cy, lobe_w, lobe_h, 0, num_points)
+    points.extend(right_lobe)
+    points.append([cx + inner_w, cy + inner_h])
 
-    # BOTTOM EDGE
-    if tab_bottom:
-        # Tab sticks DOWN
-        points.append([x + width * 0.65, y + height])
-        tab_center_x = x + width * 0.5
-        tab_center_y = y + height + tab_radius_h * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, 2*np.pi, 3*np.pi, 12)
-        points.extend(circle_pts)
-        points.append([x + width * 0.35, y + height])
-    else:
-        # Blank cuts UP
-        points.append([x + width * 0.65, y + height])
-        tab_center_x = x + width * 0.5
-        tab_center_y = y + height - tab_radius_h * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, np.pi, 2*np.pi, 12)
-        points.extend(circle_pts)
-        points.append([x + width * 0.35, y + height])
+    # Bottom-right corner
+    points.append([cx + inner_w, cy + inner_h])
 
-    points.append([x, y + height])
+    # BOTTOM LOBE (bulges downward)
+    points.append([cx + inner_w, cy + inner_h])
+    # Create puffy bottom lobe
+    bottom_lobe = create_lobe(cx, cy + inner_h + lobe_h * 0.7, lobe_w, lobe_h, np.pi/2, num_points)
+    points.extend(bottom_lobe)
+    points.append([cx - inner_w, cy + inner_h])
 
-    # LEFT EDGE
-    if tab_left:
-        # Tab sticks LEFT
-        points.append([x, y + height * 0.65])
-        tab_center_x = x - tab_radius_w * 0.5
-        tab_center_y = y + height * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, -np.pi * 0.5, np.pi * 0.5, 12)
-        points.extend(circle_pts)
-        points.append([x, y + height * 0.35])
-    else:
-        # Blank cuts RIGHT
-        points.append([x, y + height * 0.65])
-        tab_center_x = x + tab_radius_w * 0.5
-        tab_center_y = y + height * 0.5
-        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, np.pi * 0.5, np.pi * 1.5, 12)
-        points.extend(circle_pts)
-        points.append([x, y + height * 0.35])
+    # Bottom-left corner
+    points.append([cx - inner_w, cy + inner_h])
+
+    # LEFT LOBE (bulges leftward)
+    points.append([cx - inner_w, cy + inner_h])
+    # Create puffy left lobe
+    left_lobe = create_lobe(cx - inner_w - lobe_w * 0.7, cy, lobe_w, lobe_h, np.pi, num_points)
+    points.extend(left_lobe)
+    points.append([cx - inner_w, cy - inner_h])
 
     return np.array(points, dtype=np.int32)
 
