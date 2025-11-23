@@ -39,12 +39,12 @@ def create_jigsaw_piece(
     # Number of points for smooth curves
     num_curve_points = 12
 
-    # Corner radius for rounded corners
-    corner_radius = min(width, height) * 0.08
+    # Corner radius for rounded corners (more prominent rounding)
+    corner_radius = min(width, height) * 0.2
 
     def add_rounded_corner(px, py, radius, start_angle, end_angle):
         """Add a rounded corner."""
-        angles = np.linspace(start_angle, end_angle, 5)
+        angles = np.linspace(start_angle, end_angle, 8)
         for angle in angles:
             points.append([
                 px + radius * np.cos(angle),
