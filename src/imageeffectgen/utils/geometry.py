@@ -57,66 +57,68 @@ def create_jigsaw_piece(
         """Add a tab (protrusion) or blank (indentation) to an edge.
 
         Creates classic mushroom-cap shaped tabs using a perfect semicircular arc.
+        Tabs and blanks are exact mirror curves for perfect interlocking.
         """
-        # Edge direction
+        # Edge direction vector
         edge_vec = np.array(edge_end) - np.array(edge_start)
         edge_length = np.linalg.norm(edge_vec)
-        edge_dir = edge_vec / edge_length if edge_length > 0 else np.array([1, 0])
+        if edge_length == 0:
+            return
+        edge_dir = edge_vec / edge_length
 
-        # Perpendicular direction (pointing out from piece)
+        # Perpendicular direction (pointing outward from piece)
         perp_dir = np.array(perpendicular_out)
 
         # Start of edge
         start_pt = np.array(edge_start)
 
-        # Position along edge where tab/blank starts and ends (centered)
-        tab_start_t = 0.5 - (tab_width / edge_length) / 2
-        tab_end_t = 0.5 + (tab_width / edge_length) / 2
+        # Center position along edge (50%)
+        center_t = 0.5
+        center_pt = start_pt + center_t * edge_vec
 
-        # Points before tab/blank
-        t_before = np.linspace(0, tab_start_t, 3)
-        for t in t_before[:-1]:  # Exclude last to avoid duplicate
+        # Tab/blank width and radius for the semicircular cap
+        # Width is measured along the edge
+        tab_w = tab_width
+        radius = tab_w / 2.0
+
+        # Points before the tab/blank (from start to beginning of curve)
+        # The curve starts at center - radius (along the edge direction)
+        curve_start_t = center_t - (radius / edge_length)
+        curve_end_t = center_t + (radius / edge_length)
+
+        # Add points before the curve
+        t_vals = np.linspace(0, curve_start_t, 3)
+        for t in t_vals[:-1]:
             pt = start_pt + t * edge_vec
             points.append(pt)
 
-        # Base points where tab/blank meets the edge
-        tab_start_pt = start_pt + tab_start_t * edge_vec
-        tab_end_pt = start_pt + tab_end_t * edge_vec
+        # Create the semicircular tab or blank
+        # For a tab: curve bulges outward (positive direction)
+        # For a blank: curve cuts inward (negative direction)
+        sign = 1.0 if is_tab else -1.0
 
-        # Create tab (outward) or blank (inward) using perfect semicircle
-        depth = tab_depth if is_tab else -tab_depth
-
-        # Center point of the semicircular arc (midpoint of the edge section)
-        center_on_edge = (tab_start_pt + tab_end_pt) / 2
-
-        # Radius of the semicircle (equal to half the tab width)
-        radius = tab_width / 2
-
-        # Create perfect semicircular arc
-        # For a tab: arc bulges outward; for a blank: arc curves inward
+        # Parametric semicircle
+        # angles from 0 to π creates a semicircle
         num_arc_points = 16
         angles = np.linspace(0, np.pi, num_arc_points)
 
-        # Direction along the edge (from tab_start to tab_end)
-        edge_dir_local = (tab_end_pt - tab_start_pt) / np.linalg.norm(tab_end_pt - tab_start_pt)
-
         for angle in angles:
-            # Position along the semicircle
-            # x-component: along the edge
-            # y-component: perpendicular to edge (depth)
-            x_offset = radius * np.cos(angle)  # Along edge direction
-            y_offset = radius * np.sin(angle)  # Perpendicular (outward/inward)
+            # Parametric semicircle centered at center_pt
+            # along_edge goes from -radius to +radius (left to right along the edge)
+            # perp_distance goes from 0 to radius to 0 (forms the semicircular bulge)
+            along_edge = -radius * np.cos(angle)  # -radius at θ=0, 0 at θ=π/2, +radius at θ=π
+            perp_distance = radius * np.sin(angle)  # 0 at θ=0, radius at θ=π/2, 0 at θ=π
 
-            # Apply depth factor
-            y_offset = y_offset * (depth / radius)
+            # Apply tab/blank direction (outward for tab, inward for blank)
+            perp_distance = perp_distance * sign
 
             # Calculate point position
-            pt = tab_start_pt + x_offset * edge_dir_local + y_offset * perp_dir
+            pt = center_pt + along_edge * edge_dir + perp_distance * perp_dir
             points.append(pt)
 
-        # Points after tab/blank
-        t_after = np.linspace(tab_end_t, 1.0, 3)
-        for t in t_after[1:]:  # Skip first to avoid duplicate
+        # Add points after the curve
+        t_vals = np.linspace(curve_end_t, 1.0, 3)
+        for t in t_vals[1:]:
             pt = start_pt + t * edge_vec
             points.append(pt)
 
