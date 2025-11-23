@@ -27,26 +27,182 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+    /* Antique paper background */
+    .stApp {
+        background: linear-gradient(to bottom,
+            rgba(235, 220, 195, 0.9),
+            rgba(225, 210, 180, 0.95)
+        );
+        background-image:
+            linear-gradient(to bottom, rgba(235, 220, 195, 0.9), rgba(225, 210, 180, 0.95)),
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(150, 120, 80, 0.03) 2px, rgba(150, 120, 80, 0.03) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(150, 120, 80, 0.03) 2px, rgba(150, 120, 80, 0.03) 4px);
+        background-color: #f4e8d8;
+    }
+
+    /* Paper texture overlay */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.15;
+        background-image:
+            radial-gradient(circle at 20% 50%, transparent 0%, rgba(100, 80, 60, 0.1) 100%),
+            radial-gradient(circle at 80% 80%, transparent 0%, rgba(100, 80, 60, 0.1) 100%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Main header with pixel font */
     .main-header {
-        font-size: 3rem;
-        font-weight: bold;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 2.5rem;
         text-align: center;
         margin-bottom: 0;
+        color: #4a3520;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.3);
+        border: 3px solid #8b6f47;
+        border-radius: 8px;
+        box-shadow: inset 0 0 20px rgba(139, 111, 71, 0.1);
     }
+
     .sub-header {
+        font-family: 'VT323', monospace;
+        font-size: 1.8rem;
         text-align: center;
-        color: #666;
+        color: #6b5438;
         margin-bottom: 2rem;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(to bottom,
+            rgba(245, 235, 215, 0.95),
+            rgba(235, 225, 205, 0.95)
+        );
+        border-right: 3px solid #8b6f47;
+    }
+
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        font-family: 'Press Start 2P', cursive;
+        color: #4a3520;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] label {
+        font-family: 'VT323', monospace;
+        font-size: 1.3rem;
+        color: #5a4530;
+    }
+
+    /* Main content headers */
+    h1, h2, h3 {
+        font-family: 'Press Start 2P', cursive;
+        color: #4a3520;
+        line-height: 1.6;
+    }
+
+    /* Regular text */
+    p, div, span, label {
+        font-family: 'VT323', monospace;
+        font-size: 1.2rem;
+        color: #5a4530;
+    }
+
+    /* Buttons */
     .stButton>button {
         width: 100%;
-        background-color: #FF4B4B;
-        color: white;
+        background: linear-gradient(to bottom, #d4a574, #b8935e);
+        color: #2a1f15;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 0.8rem;
         font-weight: bold;
+        border: 3px solid #8b6f47;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        transition: all 0.3s;
     }
+
+    .stButton>button:hover {
+        background: linear-gradient(to bottom, #e4b584, #c8a36e);
+        transform: translateY(-2px);
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Download button */
+    .stDownloadButton>button {
+        background: linear-gradient(to bottom, #a4c574, #88a95e);
+        color: #1f2a15;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 0.8rem;
+        border: 3px solid #6b8f47;
+        border-radius: 8px;
+        box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    }
+
+    /* File uploader */
+    .stFileUploader {
+        background: rgba(255, 255, 255, 0.5);
+        border: 3px dashed #8b6f47;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    /* Images */
     .example-image {
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        border: 3px solid #8b6f47;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Info boxes */
+    .stAlert {
+        background: rgba(255, 255, 255, 0.6);
+        border: 2px solid #8b6f47;
+        border-radius: 8px;
+        font-family: 'VT323', monospace;
+    }
+
+    /* Dividers */
+    hr {
+        border: 2px solid #8b6f47;
+        opacity: 0.5;
+    }
+
+    /* Radio buttons and checkboxes */
+    .stRadio label, .stCheckbox label {
+        font-family: 'VT323', monospace;
+        font-size: 1.2rem;
+    }
+
+    /* Selectbox */
+    .stSelectbox label {
+        font-family: 'VT323', monospace;
+        font-size: 1.2rem;
+    }
+
+    /* Markdown links */
+    a {
+        color: #8b4513;
+        font-family: 'VT323', monospace;
+        text-decoration: underline;
+    }
+
+    a:hover {
+        color: #a0522d;
     }
 </style>
 """, unsafe_allow_html=True)
