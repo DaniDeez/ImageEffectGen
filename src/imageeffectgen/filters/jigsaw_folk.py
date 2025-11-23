@@ -154,15 +154,14 @@ class JigsawFolkFilter(BaseFilter):
         Returns:
             Image with jigsaw pieces
         """
-        # Create output image
-        output = np.ones((height, width, 3), dtype=np.uint8) * 240  # Light background
+        # Create output image with light background
+        output = np.ones((height, width, 3), dtype=np.uint8) * 240
 
-        # Generate jigsaw grid
-        polygons = create_jigsaw_grid(
+        # Generate jigsaw grid with real puzzle pieces
+        piece_data = create_jigsaw_grid(
             width,
             height,
-            piece_size=self.piece_size,
-            overlap=0.15
+            piece_size=self.piece_size
         )
 
         # Create PIL Image for drawing
@@ -170,11 +169,11 @@ class JigsawFolkFilter(BaseFilter):
         draw = ImageDraw.Draw(pil_output)
 
         # Draw each jigsaw piece
-        for poly in polygons:
-            # Smooth the polygon
+        for poly, bbox in piece_data:
+            # Smooth the polygon for organic feel
             smoothed = smooth_polygon(poly, iterations=self.smoothness)
 
-            # Create mask for this piece
+            # Create mask for this piece to sample colors
             mask = np.zeros((height, width), dtype=np.uint8)
             cv2.fillPoly(mask, [smoothed], 255)
 
@@ -182,10 +181,14 @@ class JigsawFolkFilter(BaseFilter):
             piece_pixels = image[mask > 0]
 
             if len(piece_pixels) == 0:
-                continue
-
-            # Get dominant color
-            piece_color = get_dominant_color(piece_pixels)
+                # Use bbox center as fallback
+                bx, by, bw, bh = bbox
+                cx = min(bx + bw // 2, width - 1)
+                cy = min(by + bh // 2, height - 1)
+                piece_color = tuple(image[cy, cx].tolist())
+            else:
+                # Get dominant color
+                piece_color = get_dominant_color(piece_pixels)
 
             # Draw filled polygon
             poly_list = [(int(x), int(y)) for x, y in smoothed]
@@ -194,34 +197,68 @@ class JigsawFolkFilter(BaseFilter):
         # Convert back to array
         result = np.array(pil_output)
 
-        # Add subtle outlines to pieces
-        result = self._add_piece_outlines(result, polygons)
+        # Add subtle outlines and shadows to pieces
+        result = self._add_piece_effects(result, piece_data)
 
         return result
 
-    def _add_piece_outlines(
+    def _add_piece_effects(
         self,
         image: np.ndarray,
-        polygons: List[np.ndarray],
-        outline_color: Tuple[int, int, int] = (80, 80, 80),
-        outline_width: int = 1
+        piece_data: List[Tuple[np.ndarray, Tuple[int, int, int, int]]],
+        outline_color: Tuple[int, int, int] = (60, 60, 60),
+        outline_width: int = 2,
+        shadow_offset: int = 2
     ) -> np.ndarray:
         """
-        Add subtle outlines to jigsaw pieces.
+        Add outlines and subtle shadows to jigsaw pieces.
 
         Args:
             image: Input image
-            polygons: List of polygon shapes
+            piece_data: List of (polygon, bbox) tuples
             outline_color: Color for outlines
             outline_width: Width of outlines
+            shadow_offset: Pixel offset for shadow effect
 
         Returns:
-            Image with outlines
+            Image with effects
         """
         result = image.copy()
 
-        for poly in polygons:
+        # First pass: Add shadows
+        for poly, bbox in piece_data:
             smoothed = smooth_polygon(poly, iterations=self.smoothness)
+
+            # Create shadow by drawing a darker version offset slightly
+            shadow_poly = smoothed + np.array([shadow_offset, shadow_offset])
+            shadow_color = (200, 200, 200)  # Light gray shadow
+
+            # Draw shadow
+            cv2.fillPoly(result, [shadow_poly.astype(np.int32)], shadow_color)
+
+        # Redraw pieces on top of shadows
+        pil_temp = Image.fromarray(result)
+        draw_temp = ImageDraw.Draw(pil_temp)
+
+        for poly, bbox in piece_data:
+            smoothed = smooth_polygon(poly, iterations=self.smoothness)
+
+            # Sample color from original image
+            mask = np.zeros(image.shape[:2], dtype=np.uint8)
+            cv2.fillPoly(mask, [smoothed], 255)
+            piece_pixels = image[mask > 0]
+
+            if len(piece_pixels) > 0:
+                piece_color = get_dominant_color(piece_pixels)
+                poly_list = [(int(x), int(y)) for x, y in smoothed]
+                draw_temp.polygon(poly_list, fill=piece_color, outline=None)
+
+        result = np.array(pil_temp)
+
+        # Second pass: Add outlines
+        for poly, bbox in piece_data:
+            smoothed = smooth_polygon(poly, iterations=self.smoothness)
+
             # Draw outline
             cv2.polylines(
                 result,
