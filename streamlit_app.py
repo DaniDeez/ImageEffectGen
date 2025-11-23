@@ -281,70 +281,70 @@ def main():
             # Parameters
             st.subheader("Custom Parameters")
 
-                if preset == "Custom":
-                    piece_size = st.slider("Piece Size", 20, 100, 50, 5,
-                                          help="Size of jigsaw pieces (larger = fewer pieces)")
-                    n_colors = st.slider("Number of Colors", 8, 24, 16, 1,
-                                       help="More colors = more detail, fewer = more stylized")
-                    smoothness = st.slider("Smoothness", 1, 10, 3, 1,
-                                         help="How smooth the piece edges are")
-                    use_folk_palette = st.checkbox("Use Folk Art Palette", True,
-                                                 help="Use traditional folk art colors")
-                    add_borders = st.checkbox("Add Decorative Border", False)
+            if preset == "Custom":
+                piece_size = st.slider("Piece Size", 20, 100, 50, 5,
+                                      help="Size of jigsaw pieces (larger = fewer pieces)")
+                n_colors = st.slider("Number of Colors", 8, 24, 16, 1,
+                                   help="More colors = more detail, fewer = more stylized")
+                smoothness = st.slider("Smoothness", 1, 10, 3, 1,
+                                     help="How smooth the piece edges are")
+                use_folk_palette = st.checkbox("Use Folk Art Palette", True,
+                                             help="Use traditional folk art colors")
+                add_borders = st.checkbox("Add Decorative Border", False)
 
-                    if add_borders:
-                        border_pattern = st.selectbox("Border Pattern",
-                                                     ["flowers", "geometric"])
-                    else:
-                        border_pattern = None
+                if add_borders:
+                    border_pattern = st.selectbox("Border Pattern",
+                                                 ["flowers", "geometric"])
                 else:
-                    # Apply presets
-                    presets = {
-                        "Default": {"piece_size": 50, "n_colors": 16, "smoothness": 3,
-                                   "use_folk_palette": True, "add_borders": False, "border_pattern": None},
-                        "Small Pieces": {"piece_size": 30, "n_colors": 20, "smoothness": 3,
-                                        "use_folk_palette": True, "add_borders": False, "border_pattern": None},
-                        "Large Pieces": {"piece_size": 70, "n_colors": 10, "smoothness": 2,
-                                        "use_folk_palette": True, "add_borders": False, "border_pattern": None},
-                        "Smooth": {"piece_size": 55, "n_colors": 16, "smoothness": 8,
-                                  "use_folk_palette": True, "add_borders": False, "border_pattern": None},
-                        "With Border": {"piece_size": 45, "n_colors": 16, "smoothness": 3,
-                                       "use_folk_palette": True, "add_borders": True, "border_pattern": "flowers"}
-                    }
+                    border_pattern = None
+            else:
+                # Apply presets
+                presets = {
+                    "Default": {"piece_size": 50, "n_colors": 16, "smoothness": 3,
+                               "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                    "Small Pieces": {"piece_size": 30, "n_colors": 20, "smoothness": 3,
+                                    "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                    "Large Pieces": {"piece_size": 70, "n_colors": 10, "smoothness": 2,
+                                    "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                    "Smooth": {"piece_size": 55, "n_colors": 16, "smoothness": 8,
+                              "use_folk_palette": True, "add_borders": False, "border_pattern": None},
+                    "With Border": {"piece_size": 45, "n_colors": 16, "smoothness": 3,
+                                   "use_folk_palette": True, "add_borders": True, "border_pattern": "flowers"}
+                }
 
-                    params = presets[preset]
-                    piece_size = params["piece_size"]
-                    n_colors = params["n_colors"]
-                    smoothness = params["smoothness"]
-                    use_folk_palette = params["use_folk_palette"]
-                    add_borders = params["add_borders"]
-                    border_pattern = params["border_pattern"]
+                params = presets[preset]
+                piece_size = params["piece_size"]
+                n_colors = params["n_colors"]
+                smoothness = params["smoothness"]
+                use_folk_palette = params["use_folk_palette"]
+                add_borders = params["add_borders"]
+                border_pattern = params["border_pattern"]
 
-                    # Display preset values
-                    st.info(f"""
-                    **{preset} Settings:**
-                    - Piece Size: {piece_size}
-                    - Colors: {n_colors}
-                    - Smoothness: {smoothness}
-                    - Folk Palette: {'Yes' if use_folk_palette else 'No'}
-                    - Border: {border_pattern if add_borders else 'No'}
-                    """)
-
-                st.divider()
-
-                # Info
-                st.subheader("ℹ️ About")
-                st.markdown("""
-                This filter transforms images into jigsaw folk art style with:
-                - Organic puzzle piece shapes
-                - Flat folk art colors
-                - Traditional decorative borders
-
-                **Tips:**
-                - Small pieces = more detail
-                - Fewer colors = more folk art style
-                - Try different presets!
+                # Display preset values
+                st.info(f"""
+                **{preset} Settings:**
+                - Piece Size: {piece_size}
+                - Colors: {n_colors}
+                - Smoothness: {smoothness}
+                - Folk Palette: {'Yes' if use_folk_palette else 'No'}
+                - Border: {border_pattern if add_borders else 'No'}
                 """)
+
+            st.divider()
+
+            # Info
+            st.subheader("ℹ️ About")
+            st.markdown("""
+            This filter transforms images into jigsaw folk art style with:
+            - Organic puzzle piece shapes
+            - Flat folk art colors
+            - Traditional decorative borders
+
+            **Tips:**
+            - Small pieces = more detail
+            - Fewer colors = more folk art style
+            - Try different presets!
+            """)
 
         else:  # Pixel Art filter
             # Pixel art presets
