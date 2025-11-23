@@ -28,104 +28,102 @@ def create_jigsaw_piece(
     points = []
     tab_top, tab_right, tab_bottom, tab_left = tabs
 
-    # Tab parameters
-    tab_w = width * tab_size
-    tab_h = height * tab_size
+    # Tab parameters - make them more circular/rounded
+    tab_radius_w = width * tab_size
+    tab_radius_h = height * tab_size
 
-    # Starting point (top-left)
-    cx = x
-    cy = y
+    # Helper function to create a rounded tab or blank
+    def create_semicircle(cx, cy, radius, angle_start, angle_end, num_points=10):
+        """Create points for a semicircular tab or blank."""
+        angles = np.linspace(angle_start, angle_end, num_points)
+        pts = []
+        for angle in angles:
+            px = cx + radius * np.cos(angle)
+            py = cy + radius * np.sin(angle)
+            pts.append([px, py])
+        return pts
 
-    # TOP EDGE (moving right)
-    points.append([cx, cy])
+    # TOP EDGE
+    points.append([x, y])
 
     if tab_top:
-        # Add tab going up
-        points.append([cx + width * 0.3, cy])
-        points.append([cx + width * 0.3, cy - tab_h])
-        points.append([cx + width * 0.35, cy - tab_h * 1.2])
-        points.append([cx + width * 0.5, cy - tab_h * 1.3])
-        points.append([cx + width * 0.65, cy - tab_h * 1.2])
-        points.append([cx + width * 0.7, cy - tab_h])
-        points.append([cx + width * 0.7, cy])
+        # Tab sticks UP (semicircle above the edge)
+        points.append([x + width * 0.35, y])
+        # Semicircle going up
+        tab_center_x = x + width * 0.5
+        tab_center_y = y - tab_radius_h * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, np.pi, 2*np.pi, 12)
+        points.extend(circle_pts)
+        points.append([x + width * 0.65, y])
     else:
-        # Add blank going in
-        points.append([cx + width * 0.3, cy])
-        points.append([cx + width * 0.3, cy + tab_h])
-        points.append([cx + width * 0.35, cy + tab_h * 1.2])
-        points.append([cx + width * 0.5, cy + tab_h * 1.3])
-        points.append([cx + width * 0.65, cy + tab_h * 1.2])
-        points.append([cx + width * 0.7, cy + tab_h])
-        points.append([cx + width * 0.7, cy])
+        # Blank cuts DOWN (semicircle below the edge)
+        points.append([x + width * 0.35, y])
+        # Semicircle going down
+        tab_center_x = x + width * 0.5
+        tab_center_y = y + tab_radius_h * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, 0, np.pi, 12)
+        points.extend(circle_pts)
+        points.append([x + width * 0.65, y])
 
-    # Top-right corner
-    points.append([cx + width, cy])
+    points.append([x + width, y])
 
-    # RIGHT EDGE (moving down)
+    # RIGHT EDGE
     if tab_right:
-        # Add tab going right
-        points.append([cx + width, cy + height * 0.3])
-        points.append([cx + width + tab_w, cy + height * 0.3])
-        points.append([cx + width + tab_w * 1.2, cy + height * 0.35])
-        points.append([cx + width + tab_w * 1.3, cy + height * 0.5])
-        points.append([cx + width + tab_w * 1.2, cy + height * 0.65])
-        points.append([cx + width + tab_w, cy + height * 0.7])
-        points.append([cx + width, cy + height * 0.7])
+        # Tab sticks RIGHT
+        points.append([x + width, y + height * 0.35])
+        tab_center_x = x + width + tab_radius_w * 0.5
+        tab_center_y = y + height * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, np.pi * 0.5, np.pi * 1.5, 12)
+        points.extend(circle_pts)
+        points.append([x + width, y + height * 0.65])
     else:
-        # Add blank going in
-        points.append([cx + width, cy + height * 0.3])
-        points.append([cx + width - tab_w, cy + height * 0.3])
-        points.append([cx + width - tab_w * 1.2, cy + height * 0.35])
-        points.append([cx + width - tab_w * 1.3, cy + height * 0.5])
-        points.append([cx + width - tab_w * 1.2, cy + height * 0.65])
-        points.append([cx + width - tab_w, cy + height * 0.7])
-        points.append([cx + width, cy + height * 0.7])
+        # Blank cuts LEFT
+        points.append([x + width, y + height * 0.35])
+        tab_center_x = x + width - tab_radius_w * 0.5
+        tab_center_y = y + height * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, -np.pi * 0.5, np.pi * 0.5, 12)
+        points.extend(circle_pts)
+        points.append([x + width, y + height * 0.65])
 
-    # Bottom-right corner
-    points.append([cx + width, cy + height])
+    points.append([x + width, y + height])
 
-    # BOTTOM EDGE (moving left)
+    # BOTTOM EDGE
     if tab_bottom:
-        # Add tab going down
-        points.append([cx + width * 0.7, cy + height])
-        points.append([cx + width * 0.7, cy + height + tab_h])
-        points.append([cx + width * 0.65, cy + height + tab_h * 1.2])
-        points.append([cx + width * 0.5, cy + height + tab_h * 1.3])
-        points.append([cx + width * 0.35, cy + height + tab_h * 1.2])
-        points.append([cx + width * 0.3, cy + height + tab_h])
-        points.append([cx + width * 0.3, cy + height])
+        # Tab sticks DOWN
+        points.append([x + width * 0.65, y + height])
+        tab_center_x = x + width * 0.5
+        tab_center_y = y + height + tab_radius_h * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, 2*np.pi, 3*np.pi, 12)
+        points.extend(circle_pts)
+        points.append([x + width * 0.35, y + height])
     else:
-        # Add blank going in
-        points.append([cx + width * 0.7, cy + height])
-        points.append([cx + width * 0.7, cy + height - tab_h])
-        points.append([cx + width * 0.65, cy + height - tab_h * 1.2])
-        points.append([cx + width * 0.5, cy + height - tab_h * 1.3])
-        points.append([cx + width * 0.35, cy + height - tab_h * 1.2])
-        points.append([cx + width * 0.3, cy + height - tab_h])
-        points.append([cx + width * 0.3, cy + height])
+        # Blank cuts UP
+        points.append([x + width * 0.65, y + height])
+        tab_center_x = x + width * 0.5
+        tab_center_y = y + height - tab_radius_h * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_h, np.pi, 2*np.pi, 12)
+        points.extend(circle_pts)
+        points.append([x + width * 0.35, y + height])
 
-    # Bottom-left corner
-    points.append([cx, cy + height])
+    points.append([x, y + height])
 
-    # LEFT EDGE (moving up)
+    # LEFT EDGE
     if tab_left:
-        # Add tab going left
-        points.append([cx, cy + height * 0.7])
-        points.append([cx - tab_w, cy + height * 0.7])
-        points.append([cx - tab_w * 1.2, cy + height * 0.65])
-        points.append([cx - tab_w * 1.3, cy + height * 0.5])
-        points.append([cx - tab_w * 1.2, cy + height * 0.35])
-        points.append([cx - tab_w, cy + height * 0.3])
-        points.append([cx, cy + height * 0.3])
+        # Tab sticks LEFT
+        points.append([x, y + height * 0.65])
+        tab_center_x = x - tab_radius_w * 0.5
+        tab_center_y = y + height * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, -np.pi * 0.5, np.pi * 0.5, 12)
+        points.extend(circle_pts)
+        points.append([x, y + height * 0.35])
     else:
-        # Add blank going in
-        points.append([cx, cy + height * 0.7])
-        points.append([cx + tab_w, cy + height * 0.7])
-        points.append([cx + tab_w * 1.2, cy + height * 0.65])
-        points.append([cx + tab_w * 1.3, cy + height * 0.5])
-        points.append([cx + tab_w * 1.2, cy + height * 0.35])
-        points.append([cx + tab_w, cy + height * 0.3])
-        points.append([cx, cy + height * 0.3])
+        # Blank cuts RIGHT
+        points.append([x, y + height * 0.65])
+        tab_center_x = x + tab_radius_w * 0.5
+        tab_center_y = y + height * 0.5
+        circle_pts = create_semicircle(tab_center_x, tab_center_y, tab_radius_w, np.pi * 0.5, np.pi * 1.5, 12)
+        points.extend(circle_pts)
+        points.append([x, y + height * 0.35])
 
     return np.array(points, dtype=np.int32)
 
